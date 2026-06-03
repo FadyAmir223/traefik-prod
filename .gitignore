@@ -1,0 +1,4 @@
+.env
+traefik/production/auth
+traefik/production/logs
+traefik/production/acme.json

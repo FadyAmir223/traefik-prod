@@ -1,0 +1,82 @@
+services:
+  logo:
+    image: crccheck/hello-world
+    container_name: logo
+    ports:
+      - 9999:8000
+    restart: unless-stopped
+    networks:
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.mode=testing # TODO: remove me
+      - traefik.http.routers.logo.rule=Host(`world.${CLIENT_DOMAIN}`)
+      - traefik.http.routers.logo.entrypoints=https
+      - traefik.http.routers.logo.tls=true
+      - traefik.http.services.logo.loadbalancer.server.port=8000
+
+  traefik:
+    image: traefik:v3.7.1
+    container_name: traefik
+    ports:
+      - 8080:8080/tcp # 80:80/tcp
+      - 8443:8443/tcp # 443:443/tcp
+      - 8443:8443/udp # 443:443/udp
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./traefik/production/traefik.yml:/traefik.yml:ro
+      - ./traefik/production/configs:/configs:ro
+      - ./traefik/production/auth/auth.txt:/auth.txt:ro
+      - ./traefik/production/acme.json:/acme.json:rw
+      - ./traefik/production/logs:/logs:rw
+    environment:
+      - TZ=Africa/Cairo
+      - CF_DNS_API_TOKEN=${CFAPI}
+    networks:
+      - proxy
+    read_only: true
+    security_opt:
+      - no-new-privileges=true
+    labels:
+      - traefik.enable=true
+      - traefik.mode=testing # TODO: remove me
+      - traefik.http.routers.dashboard.entrypoints=https
+      - traefik.http.routers.dashboard.rule=Host(`hello.${CLIENT_DOMAIN}`)
+      - traefik.http.routers.dashboard.tls=true
+      - traefik.http.routers.dashboard.tls.certresolver=letsencrypt
+      - traefik.http.routers.dashboard.service=api@internal
+      - traefik.http.routers.dashboard.middlewares=auth
+      - traefik.http.middlewares.auth.basicauth.usersFile=/auth.txt
+      - traefik.http.routers.dashboard.tls.domains[0].main=${CLIENT_DOMAIN}
+      - traefik.http.routers.dashboard.tls.domains[0].sans=*.${CLIENT_DOMAIN}
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.2"
+        reservations:
+          memory: 64M
+          cpus: "0.1"
+
+  traefik-dockerproxy:
+    image: lscr.io/linuxserver/socket-proxy:latest
+    container_name: traefik-dockerproxy
+    environment:
+      - CONTAINERS=1
+      - POST=0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    tmpfs:
+      - /run
+    networks:
+      - proxy
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges=true
+    read_only: true
+
+networks:
+  proxy:
+    name: proxy
+    external: true

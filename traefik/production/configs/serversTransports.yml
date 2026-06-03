@@ -1,0 +1,9 @@
+http:
+  serversTransports:
+    securetransport:
+      insecureSkipVerify: false
+    insecuretransport:
+      insecureSkipVerify: true
+
+# And then referencing it in your container label
+# traefik.http.services.example-svc.loadBalancer.serversTransport=insescuretransport@file
