@@ -2,14 +2,11 @@ services:
   logo:
     image: crccheck/hello-world
     container_name: logo
-    ports:
-      - 9999:8000
-    restart: unless-stopped
+    restart: always
     networks:
       - proxy
     labels:
       - traefik.enable=true
-      - traefik.mode=testing # TODO: remove me
       - traefik.http.routers.logo.rule=Host(`world.${CLIENT_DOMAIN}`)
       - traefik.http.routers.logo.entrypoints=https
       - traefik.http.routers.logo.tls=true
@@ -19,9 +16,9 @@ services:
     image: traefik:v3.7.1
     container_name: traefik
     ports:
-      - 8080:8080/tcp # 80:80/tcp
-      - 8443:8443/tcp # 443:443/tcp
-      - 8443:8443/udp # 443:443/udp
+      - 80:80/tcp
+      - 443:443/tcp
+      - 443:443/udp
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./traefik/production/traefik.yml:/traefik.yml:ro
@@ -39,7 +36,6 @@ services:
       - no-new-privileges=true
     labels:
       - traefik.enable=true
-      - traefik.mode=testing # TODO: remove me
       - traefik.http.routers.dashboard.entrypoints=https
       - traefik.http.routers.dashboard.rule=Host(`hello.${CLIENT_DOMAIN}`)
       - traefik.http.routers.dashboard.tls=true
@@ -49,7 +45,7 @@ services:
       - traefik.http.middlewares.auth.basicauth.usersFile=/auth.txt
       - traefik.http.routers.dashboard.tls.domains[0].main=${CLIENT_DOMAIN}
       - traefik.http.routers.dashboard.tls.domains[0].sans=*.${CLIENT_DOMAIN}
-    restart: unless-stopped
+    restart: always
     deploy:
       resources:
         limits:
@@ -71,7 +67,7 @@ services:
       - /run
     networks:
       - proxy
-    restart: unless-stopped
+    restart: always
     security_opt:
       - no-new-privileges=true
     read_only: true

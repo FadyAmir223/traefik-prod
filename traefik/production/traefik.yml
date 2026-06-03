@@ -8,7 +8,7 @@ api:
 
 entryPoints:
   http:
-    address: :8080 # :80
+    address: :80
     forwardedHeaders:
       trustedIPs:
         - 127.0.0.1/32
@@ -45,10 +45,9 @@ entryPoints:
           to: https
           scheme: https
   https:
-    address: :8443 # :443
+    address: :443
     http:
       tls: {}
-        # certResolver: letsencrypt
     forwardedHeaders:
       trustedIPs:
         - 127.0.0.1/32
@@ -80,18 +79,14 @@ entryPoints:
         - 2a06:98c0::/29
         - 2c0f:f248::/32
     http3:
-      advertisedPort: 8443 # 443
+      advertisedPort: 443
 
 providers:
   docker:
-    # endpoint: "unix:///var/run/docker.sock"
     endpoint: 'tcp://traefik-dockerproxy:2375'
     exposedByDefault: false
     network: proxy
-    # defaultRule: "Host(`{{ index .Labels \"com.docker.compose.service\"}}.novex-dev.com`)"
-    constraints: 'Label(`traefik.mode`, `testing`)' # TODO: remove me
   file:
-    # filename: /config.yml
     directory: /configs
     watch: true
 
@@ -122,25 +117,10 @@ certificatesResolvers:
           - 1.1.1.1:53
           - 1.0.0.1:53
 
-  zerossl:
-    acme:
-      caServer: https://acme.zerossl.com/v2/DV90
-      email: cert@example.com
-      storage: acme.json
-      dnsChallenge:
-        provider: cloudflare
-        resolvers:
-          - 1.1.1.1:53
-          - 1.0.0.1:53
-      eab:
-        kid: sdjkflUHKer79HLK
-        hmacEncoded: sjflkJLHeh5JHfdGUIGEJ8ASdyouhj43
-
 serversTransport:
   insecureSkipVerify: false
 
 accesslog:
-  # format: common
   filePath: /logs/access.log
   fields:
     headers:
@@ -148,6 +128,5 @@ accesslog:
         User-Agent: keep
 
 log:
-  # format: common
   level: INFO
   filePath: /logs/traefik.log
