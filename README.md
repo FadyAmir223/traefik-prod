@@ -39,7 +39,6 @@ Go to your [Cloudflare Profile API Tokens](https://dash.cloudflare.com/profile/a
 * **Zone Resources:**
   * `Include` -> `Specific Zone` -> `example.com`
 
----
 
 ## 3. Verification URLs
 
@@ -64,3 +63,18 @@ If an attacker discovers your server's public IP, they can connect directly to i
 2. **Traefik `trustedIPs`:** Add those same Cloudflare IP ranges to the `trustedIPs` list in `traefik.yml`. This allows Traefik to trust the forwarded headers and pass the visitor's real IP address down to your backend applications
 
 **Note on Integrations:** Because incoming webhooks from third-party services (like Stripe, Twilio, and Mailjet) are routed through your Cloudflare-proxied subdomains, they will arrive at your server from a Cloudflare IP. This means you do not need to track down or whitelist the dynamic IP ranges of these third-party services in your system firewall
+
+## 5. Log Management & Rotation
+
+This prevent server's disk space from filling up over time
+
+### Traefik System Logs
+Traefik supports native log rotation for its internal system logs `traefik.log` where it can rotate, compress, and prune them
+
+
+### Traefik Access Logs (Logrotate Sidecar)
+Unlike system logs, Traefik **does not** natively support log rotation for its access logs `access.log`.
+To handle this, a lightweight `logrotate` sidecar container runs alongside Traefik:
+
+1. **Logrotate Execution:** A daily cron job runs `logrotate` against the `access.log` file
+2. **The Signal:** the sidecar container shares Traefik's PID namespace. Immediately after rotating `access.log`, the sidecar sends a `USR1` signal to Traefik. This signal tells Traefik to gracefully release the old file descriptor and reopen the log files

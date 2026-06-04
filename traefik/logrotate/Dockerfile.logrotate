@@ -1,0 +1,10 @@
+FROM alpine:3.23
+
+RUN apk add --no-cache logrotate=3.22.0-r0
+
+COPY ./traefik/logrotate/logrotate.conf /etc/logrotate.conf
+
+# TODO: replace  0 0 * * *
+RUN echo "* * * * * /usr/sbin/logrotate -f -s /logs/logrotate.status /etc/logrotate.conf" > /etc/crontabs/root
+
+CMD ["crond", "-f"]
