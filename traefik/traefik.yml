@@ -8,7 +8,7 @@ api:
 
 entryPoints:
   http:
-    address: :80
+    address: :8080 # :80 # TODO: replace
     forwardedHeaders:
       trustedIPs:
         - 127.0.0.1/32
@@ -45,7 +45,7 @@ entryPoints:
           to: https
           scheme: https
   https:
-    address: :443
+    address: :8443 # :443 # TODO: replace
     http:
       tls: {}
     forwardedHeaders:
@@ -79,13 +79,14 @@ entryPoints:
         - 2a06:98c0::/29
         - 2c0f:f248::/32
     http3:
-      advertisedPort: 443
+      advertisedPort: 8443 # 443 # TODO: replace
 
 providers:
   docker:
     endpoint: 'tcp://traefik-dockerproxy:2375'
     exposedByDefault: false
     network: proxy
+    constraints: 'Label(`traefik.mode`, `testing`)' # TODO: remove
   file:
     directory: /configs
     watch: true
@@ -94,7 +95,7 @@ certificatesResolvers:
   staging:
     acme:
       caServer: https://acme-staging-v02.api.letsencrypt.org/directory
-      email: cert@example.com
+      email: example@gmail.com
       storage: acme.json
       httpChallenge:
         entryPoint: http
@@ -102,14 +103,14 @@ certificatesResolvers:
   production:
     acme:
       caServer: https://acme-v02.api.letsencrypt.org/directory
-      email: cert@example.com
+      email: example@gmail.com
       storage: acme.json
       httpChallenge:
         entryPoint: http
 
   letsencrypt:
     acme:
-      email: cert@example.com
+      email: example@gmail.com
       storage: acme.json
       dnsChallenge:
         provider: cloudflare
@@ -121,18 +122,18 @@ serversTransport:
   insecureSkipVerify: false
 
 log:
-  level: ERROR # INFO
+  level: ERROR
   filePath: /logs/traefik.log
   format: common # json
   maxSize: 5
   maxBackups: 10
-  # maxAge: 30
+  maxAge: 30
   compress: true
 
 accesslog:
   filePath: /logs/access.log
   format: common # json
-  bufferingSize: 2 # 50
+  bufferingSize: 50
   filters:
     statusCodes:
       - 200-299
