@@ -34,6 +34,8 @@ services:
     read_only: true
     security_opt:
       - no-new-privileges=true
+    cap_drop:
+      - ALL
     labels:
       - traefik.enable=true
       - traefik.mode=testing # TODO: remove
@@ -70,6 +72,8 @@ services:
       - proxy
     security_opt:
       - no-new-privileges=true
+    cap_drop:
+      - ALL
     read_only: true
     restart: always
     deploy:
@@ -80,6 +84,11 @@ services:
         reservations:
           memory: 32M
           cpus: "0.05"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "1"
 
   traefik-logrotate:
     build:
@@ -92,12 +101,17 @@ services:
     read_only: true
     security_opt:
       - no-new-privileges=true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETUID
+      - SETGID
     restart: always
     deploy:
       resources:
         limits:
           memory: 64M
-          cpus: "0.10"
+          cpus: "0.1"
         reservations:
           memory: 16M
           cpus: "0.05"
