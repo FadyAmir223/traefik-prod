@@ -120,13 +120,24 @@ certificatesResolvers:
 serversTransport:
   insecureSkipVerify: false
 
+log:
+  level: ERROR # INFO
+  filePath: /logs/traefik.log
+  format: common # json
+  maxSize: 5
+  maxBackups: 10
+  # maxAge: 30
+  compress: true
+
 accesslog:
   filePath: /logs/access.log
+  format: common # json
+  bufferingSize: 2 # 50
+  filters:
+    statusCodes:
+      - 200-299
+      - 400-599
   fields:
     headers:
       names:
         User-Agent: keep
-
-log:
-  level: INFO
-  filePath: /logs/traefik.log

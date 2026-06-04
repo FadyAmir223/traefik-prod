@@ -1,4 +1,4 @@
 .env
-traefik/production/auth
-traefik/production/logs
-traefik/production/acme.json
+traefik/auth
+traefik/logs
+traefik/acme.json

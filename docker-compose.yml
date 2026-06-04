@@ -1,16 +1,16 @@
 services:
-  logo:
+  hello-world:
     image: crccheck/hello-world
-    container_name: logo
+    container_name: hello-world
     restart: always
     networks:
       - proxy
     labels:
       - traefik.enable=true
-      - traefik.http.routers.logo.rule=Host(`world.${CLIENT_DOMAIN}`)
-      - traefik.http.routers.logo.entrypoints=https
-      - traefik.http.routers.logo.tls=true
-      - traefik.http.services.logo.loadbalancer.server.port=8000
+      - traefik.http.routers.hello-world.rule=Host(`world.${CLIENT_DOMAIN}`)
+      - traefik.http.routers.hello-world.entrypoints=https
+      - traefik.http.routers.hello-world.tls=true
+      - traefik.http.services.hello-world.loadbalancer.server.port=8000
 
   traefik:
     image: traefik:v3.7.1
@@ -21,14 +21,13 @@ services:
       - 443:443/udp
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ./traefik/production/traefik.yml:/traefik.yml:ro
-      - ./traefik/production/configs:/configs:ro
-      - ./traefik/production/auth/auth.txt:/auth.txt:ro
-      - ./traefik/production/acme.json:/acme.json:rw
-      - ./traefik/production/logs:/logs:rw
+      - ./traefik/traefik.yml:/traefik.yml:ro
+      - ./traefik/configs:/configs:ro
+      - ./traefik/auth/auth.txt:/auth.txt:ro
+      - ./traefik/acme.json:/acme.json:rw
+      - ./traefik/logs:/logs:rw
     environment:
-      - TZ=Africa/Cairo
-      - CF_DNS_API_TOKEN=${CFAPI}
+      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
     networks:
       - proxy
     read_only: true
