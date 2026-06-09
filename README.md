@@ -8,6 +8,9 @@ This configuration is a hardened setup based on the guide [Practical Configurati
 Run these commands on your server to set up the necessary files, permissions, and network
 
 ```sh
+cd traefik
+touch traefik.yml
+
 # create and secure the ACME certificate storage file
 touch acme.json
 sudo chown root:root acme.json

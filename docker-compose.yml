@@ -98,6 +98,9 @@ services:
     pid: service:traefik
     volumes:
       - ./traefik/logs:/logs:rw
+      # enable updating CF IPs to traefik.yml without breaking CI/CD or wiping updates before pulling
+      - ./traefik/traefik.yml:/traefik.yml:rw
+      - ./traefik/traefik.template.yml:/traefik.template.yml:ro
     read_only: true
     security_opt:
       - no-new-privileges=true
