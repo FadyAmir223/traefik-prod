@@ -8,20 +8,12 @@ This configuration is a hardened setup based on the guide [Practical Configurati
 Run these commands on your server to set up the necessary files, permissions, and network
 
 ```sh
-cd traefik
-touch traefik.yml
-
-# create and secure the ACME certificate storage file
-touch acme.json
-sudo chown root:root acme.json
-sudo chmod 600 acme.json
-
 # create the dedicated external Docker network
 docker network create proxy
 
 # generate a secure basic auth password for the Traefik dashboard
 # copy the output to 'auth.txt'
-htpasswd -nbB your_username your_password
+htpasswd -nbB username password
 ```
 
 
@@ -67,17 +59,43 @@ If an attacker discovers your server's public IP, they can connect directly to i
 
 **Note on Integrations:** Because incoming webhooks from third-party services (like Stripe, Twilio, and Mailjet) are routed through your Cloudflare-proxied subdomains, they will arrive at your server from a Cloudflare IP. This means you do not need to track down or whitelist the dynamic IP ranges of these third-party services in your system firewall
 
-## 5. Log Management & Rotation
+## 5. Automated Zero-Bootstrap Setup (Init Service)
 
-This prevent server's disk space from filling up over time
+To achieve a true "one-click deployment" state, the configuration relies on a short-lived `init` service. This container runs and exits successfully before Traefik is allowed to boot
+
+### What the Init Service Does:
+1. **Permissions & File State Enforcement:** verifies that `./traefik/acme.json` exists and applies the strictly required `600` permissions
+2. **Initial Config Compilation:** It runs the Cloudflare IP lookup script to compile the actual traefik configuration from the version-controlled `traefik.yml` before Traefik starts up
+
+
+## 6. Cloudflare IP Auto-Updates & Architectural Choices
+
+To ensure real visitor IPs are preserved and malicious traffic bypassing Cloudflare is rejected, Traefik needs to know Cloudflare's trusted IP ranges. Because these IPs change (rarely), an automated update script (`update-cf-ips.sh`) runs both at boot (via the `init` service) and weekly (via the logrotate/cron sidecar)
+
+The script retrieves Cloudflare’s current public IP ranges via their API, injects the list into the trusted IP markers inside `traefik.yml`, and writes the compiled `traefik.generated.yml`.
+
+Here is the expanded and professionally rewritten section for your README, highlighting the technical and performance reasons for avoiding interpreted middleware plugins like `traefik-plugin-cloudflare`.
+
+***
+
+### Why Avoiding Traefik Plugins
+
+Rather than using dynamic middleware such as the [traefik-plugin-cloudflare](https://github.com/agence-gaya/traefik-plugin-cloudflare) to validate and update trusted IPs in memory. it introduces several technical disadvantages under production conditions:
+
+* **Eliminating Yaegi Interpreter Overhead:** Traefik executes plugins using **Yaegi** (an embedded Go interpreter) at runtime. This means plugins are not compiled to native machine code; instead, they are interpreted on the fly. This compilation and evaluation process significantly increases Traefik's startup memory footprint and CPU overhead
+* **Request Latency Under High Traffic:** A middleware plugin must intercept, parse, and evaluate the client’s IP address against a dynamic list **for every single incoming HTTP request**. Under high concurrent traffic, this translation layer introduces measurable latency to the request-response lifecycle. By writing the IP ranges directly to `traefik.yml` instead, Traefik handles the IP matching natively using its compiled Go core (`trustedIPs`), which executes at near-zero latency using optimized CIDR lookup tables
+
+
+## 7. Log Rotation
+
+This prevents the server's disk space from filling up over time
 
 ### Traefik System Logs
-Traefik supports native log rotation for its internal system logs `traefik.log` where it can rotate, compress, and prune them
-
+Traefik supports native log rotation for its internal system logs `traefik.log` where it can rotate, compress, and prune them.
 
 ### Traefik Access Logs (Logrotate Sidecar)
 Unlike system logs, Traefik **does not** natively support log rotation for its access logs `access.log`.
 To handle this, a lightweight `logrotate` sidecar container runs alongside Traefik:
 
 1. **Logrotate Execution:** A daily cron job runs `logrotate` against the `access.log` file
-2. **The Signal:** the sidecar container shares Traefik's PID namespace. Immediately after rotating `access.log`, the sidecar sends a `USR1` signal to Traefik. This signal tells Traefik to gracefully release the old file descriptor and reopen the log files
+2. **The Signal:** The sidecar container shares Traefik's PID namespace. Immediately after rotating `access.log`, the sidecar sends a `USR1` signal to Traefik. This signal tells Traefik to gracefully release the old file descriptor and reopen the log files

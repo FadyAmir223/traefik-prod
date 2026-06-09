@@ -2,4 +2,4 @@
 traefik/auth
 traefik/logs
 traefik/acme.json
-traefik/traefik.yml
+traefik/traefik.generated.yml

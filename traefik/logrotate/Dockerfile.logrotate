@@ -2,17 +2,14 @@ FROM alpine:3.23
 
 RUN apk add --no-cache \
   logrotate=3.22.0-r0 \
-  curl=8.20.0-r1 \
+  curl=8.19.0-r0 \
   jq=1.8.1-r0
 
+COPY ./traefik/logrotate/update-cf-ips.sh /update-cf-ips.sh
 COPY ./traefik/logrotate/logrotate.conf /etc/logrotate.conf
 
-COPY ./traefik/logrotate/update-cf-ips.sh /usr/local/bin/update-cf-ips.sh
-RUN chmod +x /usr/local/bin/update-cf-ips.sh
-
-# TODO: replace  0 0 * * *
-RUN echo "* * * * * /usr/sbin/logrotate -f -s /logs/logrotate.status /etc/logrotate.conf" > /etc/crontabs/root
-
-RUN echo "0 3 * * 0 /usr/local/bin/update-cf-ips.sh >> /logs/cf-update.log 2>&1" >> /etc/crontabs/root
-
+RUN chmod +x /update-cf-ips.sh && \
+    echo "0 3 * * 0 /update-cf-ips.sh >> /logs/cf-update.log 2>&1" >> /etc/crontabs/root && \
+    echo "0 0 * * * /usr/sbin/logrotate -s /logs/logrotate.status /etc/logrotate.conf" >> /etc/crontabs/root
+  
 CMD ["crond", "-f"]

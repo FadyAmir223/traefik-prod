@@ -8,27 +8,28 @@ api:
 
 entryPoints:
   http:
-    address: :8080 # :80 # TODO: replace
+    address: :80
     forwardedHeaders:
       trustedIPs: &ip_ranges
         - 127.0.0.1/32
         - 192.168.0.0/16
         - 172.16.0.0/12
         - 10.0.0.0/8
-        # cloudflareIPs
+        # cloudflareIPs-start
+        # cloudflareIPs-end
     http:
       redirections:
         entryPoint:
           to: https
           scheme: https
   https:
-    address: :8443 # :443 # TODO: replace
+    address: :443
     http:
       tls: {}
     forwardedHeaders:
       trustedIPs: *ip_ranges
     http3:
-      advertisedPort: 8443 # 443 # TODO: replace
+      advertisedPort: 443
 
 providers:
   docker:
